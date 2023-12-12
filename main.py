@@ -4,8 +4,20 @@ from PIL import Image
 import numpy as np
 import cv2
 from keras.models import model_from_json
+import os
+import datetime
+import mysql.connector
 
 app = Flask(__name__)
+
+config = {
+    'user': 'root',
+    'password': '',
+    'host': '127.0.0.1',
+    'database': 'recyclear'
+}
+
+conn = mysql.connector.connect(**config)
 
 # Load the model architecture from JSON file
 with open('model_recyclear.json', 'r') as json_file:
@@ -33,6 +45,23 @@ def predict_image(image):
     predicted_class = class_mapping[predicted_class_index]
     confidence = predictions[0][predicted_class_index] * 100
 
+    cursor = conn.cursor()
+
+    # Query INSERT
+    insert_query = "INSERT INTO predictions (image, class_image, confidence, user_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s)"
+    
+    # Data yang ingin di-insert
+    data_to_insert = (str(datetime.datetime.now()) + image.filename, predicted_class, confidence , 1, datetime.datetime.now(), datetime.datetime.now())
+    
+    # Menjalankan query dengan data yang ingin di-insert
+    cursor.execute(insert_query, data_to_insert)
+    
+    # Commit perubahan
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
     return [predicted_class, confidence]
 
 @app.route("/")
@@ -45,6 +74,8 @@ def predict():
         return jsonify({'error': 'No image found'})
     
     image = request.files['image']
+    file_path = os.path.join('images', str(datetime.datetime.now().strftime("%Y-%m-%d")) + image.filename)
+    image.save(file_path)
     result = predict_image(image)
     
     # Modify this part to structure the response according to your requirements
