@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
 from PIL import Image
 import numpy as np
@@ -25,14 +25,14 @@ config = {
 conn = mysql.connector.connect(**config)
 
 # Load the model architecture from JSON file
-with open('model_recyclear.json', 'r') as json_file:
+with open('model/model_recyclear.json', 'r') as json_file:
     loaded_model_json = json_file.read()
 
 # Create model from JSON
 loaded_model = model_from_json(loaded_model_json)
 
 # Load weights into the model
-loaded_model.load_weights('model_05-0.97.h5')
+loaded_model.load_weights('model/model_05-0.97.h5')
 
 def generate_random_string():
     # Pilih karakter alfabet dan angka secara acak sepanjang 4 karakter
@@ -83,7 +83,7 @@ def upload_to_gcs(file, bucket_name, destination_blob_name):
 
 @app.route("/")
 def welcome():
-    return send_file('index.html')
+    return render_template("index.html")
 
 @app.route('/predict', methods=['POST'])
 def predict():

@@ -1,0 +1,10 @@
+runtime: python39
+service: machine-learning
+entrypoint: gunicorn -b :$PORT main:app
+
+handlers:
+- url: /.*
+  script: auto
+
+env_variables:
+  GOOGLE_APPLICATION_CREDENTIALS: 'key/recyclear-dev-0003-8859ed001a13.json'
