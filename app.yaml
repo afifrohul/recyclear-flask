@@ -1,10 +1,25 @@
-runtime: python39
+runtime: python
+env: flex
 service: machine-learning
-entrypoint: gunicorn -b :$PORT main:app
+entrypoint: uwsgi --http :$PORT --wsgi-file main.py --callable app
 
 handlers:
 - url: /.*
   script: auto
 
+
+runtime_config:
+    operating_system: "ubuntu22"
+    runtime_version: "3.10"
+
+automatic_scaling:
+    min_num_instances: 1
+    max_num_instances: 1
+
+resources:
+    cpu: 2
+    memory_gb: 4
+    disk_size_gb: 100
+
 env_variables:
-  GOOGLE_APPLICATION_CREDENTIALS: 'key/recyclear-dev-0003-8859ed001a13.json'
+  CLOUD_STORAGE_BUCKET: recyclear-images-classification

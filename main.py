@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-import cv2
 from keras.models import model_from_json
 import os
 import datetime
@@ -25,14 +24,14 @@ config = {
 conn = mysql.connector.connect(**config)
 
 # Load the model architecture from JSON file
-with open('model/model_recyclear.json', 'r') as json_file:
+with open('model_recyclear.json', 'r') as json_file:
     loaded_model_json = json_file.read()
 
 # Create model from JSON
 loaded_model = model_from_json(loaded_model_json)
 
 # Load weights into the model
-loaded_model.load_weights('model/model_05-0.97.h5')
+loaded_model.load_weights('model_05-0.97.h5')
 
 def generate_random_string():
     # Pilih karakter alfabet dan angka secara acak sepanjang 4 karakter
@@ -69,9 +68,6 @@ def predict_image(image, user_id):
     # Commit perubahan
     conn.commit()
 
-    # cursor.close()
-    # conn.close()
-
     return [predicted_class, confidence]
 
 def upload_to_gcs(file, bucket_name, destination_blob_name):
@@ -79,13 +75,12 @@ def upload_to_gcs(file, bucket_name, destination_blob_name):
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_file(file, content_type='image/jpeg')
-    # return f"File berhasil diunggah ke GCS: {destination_blob_name}"
 
 @app.route("/")
 def welcome():
     return render_template("index.html")
 
-@app.route('/predict', methods=['POST'])
+@app.route("/predict", methods=["POST"])
 def predict():
     if 'image' not in request.files:
         return jsonify({'error': 'No image found'})
@@ -102,7 +97,7 @@ def predict():
 
     return jsonify({'class': result[0], 'confidence': str(result[1]) + '%'})
 
-@app.route('/api/predict', methods=["POST"])
+@app.route("/api/predict", methods=["POST"])
 def predict_api():
     if request.method == 'POST':
         if 'image' not in request.files:
