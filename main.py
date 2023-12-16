@@ -38,7 +38,7 @@ def generate_random_string():
     random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
     return str(random_string)
 
-def predict_image(image, user_id):
+def predict_image(image, user_id, image_name):
     img = Image.open(image)
     img = img.resize((300, 300))
     img_array = np.asarray(img)
@@ -60,7 +60,7 @@ def predict_image(image, user_id):
     insert_query = "INSERT INTO predictions (image, class_image, confidence, user_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s)"
     
     # Data yang ingin di-insert
-    data_to_insert = (str(datetime.datetime.now().strftime("%Y-%m-%d")) + generate_random_string() + image.filename, predicted_class, confidence , user_id, datetime.datetime.now(), datetime.datetime.now())
+    data_to_insert = (image_name, predicted_class, confidence , user_id, datetime.datetime.now(), datetime.datetime.now())
     
     # Menjalankan query dengan data yang ingin di-insert
     cursor.execute(insert_query, data_to_insert)
@@ -86,14 +86,16 @@ def predict():
         return jsonify({'error': 'No image found'})
     
     image = request.files['image']
+    image_name = image.filename
     user_id = request.form['user_id']
+    str_random = generate_random_string()
 
     bucket_name = 'recyclear-images-classification'
-    destination_blob_name = str(datetime.datetime.now().strftime("%Y-%m-%d")) + generate_random_string() + image.filename
+    destination_blob_name = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")) + str_random + image_name.replace(" ", "")
 
     upload_to_gcs(image, bucket_name, destination_blob_name)
 
-    result = predict_image(image, user_id)
+    result = predict_image(image, user_id, destination_blob_name)
 
     return jsonify({'class': result[0], 'confidence': str(result[1]) + '%'})
 
@@ -104,11 +106,13 @@ def predict_api():
             return jsonify({'error': 'No image found'})
     
         image = request.files['image']
+        image_name = image.filename
         user_id = request.form['user_id']
+        str_random = generate_random_string()
         bucket_name = 'recyclear-images-classification'
-        destination_blob_name = str(datetime.datetime.now().strftime("%Y-%m-%d")) + generate_random_string() + image.filename
+        destination_blob_name = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")) + str_random + image_name.replace(" ", "")
 
         upload_to_gcs(image, bucket_name, destination_blob_name)
-        result = predict_image(image, user_id)
+        result = predict_image(image, user_id, destination_blob_name)
 
         return jsonify({'class': result[0], 'confidence': str(result[1]) + '%'})
